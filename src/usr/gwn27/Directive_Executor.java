@@ -22,7 +22,7 @@ public class Directive_Executor {
                 break;
             case"login": login_account(command_args);
                 break;
-            case "logout": logout_account(command_args);
+            case "logout": logout_account();
                 break;
             case "stats": stats_account(command_args);
                 break;
@@ -49,6 +49,7 @@ public class Directive_Executor {
         String full_command = String.join(" ", command_args) + " "+ game_status.get_current_user();
         String response = connection_handler.send_command(ByteBuffer.wrap(full_command.getBytes()));
         if(response.contains("disconnected")){
+            System.out.println("Server non raggiungibile! Riavvia l'applicazione.");
             System.exit(0);
         }
         return response;
@@ -56,9 +57,9 @@ public class Directive_Executor {
 
     private void register_account(String[] command_args){
         String response = contact_server(command_args);
-        if(response.contains("registration_success")){
+        if(response.contains("registration_failure")){
             System.out.println(Colors.erase +Colors.RED+ "Utente già registrato!"+Colors.RESET);
-        }else if(response.contains("registration_failure")){
+        }else if(response.contains("registration_success")){
             System.out.println(Colors.erase +Colors.GREEN+ "Registrazione avvenuta con successo!"+Colors.RESET);
         }
     }
@@ -66,6 +67,8 @@ public class Directive_Executor {
         String response = contact_server(command_args);
         if(response.contains("not_logged")){
             System.out.println(Colors.erase +Colors.YELLOW+"Devi eseguire il login per giocare!"+Colors.RESET);
+        }else if(response.contains("checks_error")){
+            System.out.println(Colors.erase +Colors.YELLOW+ "Impossibile avviare nuova partita! Riprova!"+Colors.RESET);
         }else if(response.contains("already_played")){
             System.out.println(Colors.erase +Colors.YELLOW+ "Hai già giocato la parola di oggi!"+Colors.RESET);
         }else if(response.contains("play_started")){
@@ -86,14 +89,9 @@ public class Directive_Executor {
             game_status.set_current_user(command_args[1]);
         }
     }
-    private void logout_account(String[] command_args){
-        String response = contact_server(command_args);
-        if(response.contains("logout_error")){
-            System.out.println(Colors.erase +Colors.RED+"Impossibile effettuare il logout! Riprova!"+Colors.RESET);
-        }else if(response.contains("logout_success")){
-            System.out.println(Colors.erase +Colors.GREEN+"Logout avvenuto con successo!"+Colors.RESET);
-            game_status.set_current_user("No_User");
-        }
+    private void logout_account(){
+        System.out.println(Colors.erase +Colors.GREEN+"Logout avvenuto con successo!"+Colors.RESET);
+        game_status.set_current_user(Colors.RED+"No_User"+Colors.RESET);
     }
     private void stats_account(String[] command_args){
         String response = contact_server(command_args);
@@ -137,12 +135,12 @@ public class Directive_Executor {
             System.out.println("\n\n"+Colors.BLUE+"La parola scelta non è valida! Riprova!"+Colors.RESET);
         }else if(response.contains("valid")){
             game_status.increase_guess_number();
-            String next_hint = response.split(",")[1];
+            String next_hint = response.split(" ")[1];
             game_status.append_word_hints(next_hint+"\n");
             System.out.println(Colors.erase+game_status.get_word_hints());
         }else if(response.contains("guessed")){
             game_status.increase_guess_number();
-            String next_hint = response.split(",")[1];
+            String next_hint = response.split(" ")[1];
             game_status.append_word_hints(next_hint);
             game_status.set_current_stage(GS_Controller.Game_States.RISULTATO);
             System.out.println(Colors.erase+game_status.get_word_hints());
@@ -171,7 +169,8 @@ public class Directive_Executor {
     }
 
     private void share_game_result(String[] command_args){
-        String response = contact_server((String.join(" ", command_args)+" "+game_status.get_word_hints()).split(" "));
+        String fixed_hints = fix_hints(game_status.get_word_hints());
+        String response = contact_server((String.join(" ", command_args)+" "+game_status.get_guess_number()+" "+fixed_hints).split(" "));
         if(response.contains("shared_success")){
             System.out.println(Colors.erase+ Colors.GREEN+"Partita condivisa con successo!"+Colors.RESET);
             System.out.println(Colors.GREEN.get_color_code() +
@@ -181,6 +180,11 @@ public class Directive_Executor {
             System.out.println(Colors.YELLOW+"Impossibile condividere risultato della partita!"+Colors.RESET);
         }
     }
+
+    private String fix_hints(String hints){
+        return hints.replaceAll("[a-zA-Z]", "?");
+    }
+
     private void quit_game(){
         System.out.println(Colors.YELLOW+"Sei sicuro di voler chiudere l'applicazione? Digita 'quit' di nuovo per confermare:");
         try(BufferedReader read_confirm = new BufferedReader(new InputStreamReader(System.in))){
@@ -188,6 +192,7 @@ public class Directive_Executor {
                 System.out.println(Colors.RED+"\nOperazione annullata!"+Colors.RESET);
             }else{
                 System.out.println(Colors.erase + Colors.GREEN + "Grazie per aver giocato a Wordle 3.0!"+Colors.RESET);
+                contact_server(new String[]{"disconnect"});
                 game_status.set_stop_client(true);
             }
         } catch (IOException e) {

@@ -69,7 +69,7 @@ public enum Commands {
                 }
             }
             if(this.name().equals("LOGIN") || this.name().equals("REGISTER")){
-                if(parameters[1].equals("No_User")){
+                if(parameters[1].equals(Colors.RED+"No_User"+Colors.RESET)){
                     System.out.println(Colors.RED+ "Nome utente non utilizzabile!"+ Colors.RESET);
                     return false;
                 }else{

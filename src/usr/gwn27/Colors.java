@@ -13,7 +13,7 @@ enum Colors {
     WHITE_BACK("\u001B[47m"),
     YELLOW_UNDER("\033[4;33m");
     */
-
+    //TODO: erase console properly
     private final String color_code;
     public static final String erase ="\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
     public String get_color_code() {

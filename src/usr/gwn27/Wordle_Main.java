@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Wordle_Main {
     public static void main(String[] args) {
-        GS_Controller status_controller = new GS_Controller(GS_Controller.Game_States.MENU, "No_User");
+        GS_Controller status_controller = new GS_Controller(GS_Controller.Game_States.MENU, Colors.RED+"No_User"+Colors.RESET);
         Boolean configuration_done = false;
         AtomicInteger server_port = new AtomicInteger();
         StringBuilder host_name = new StringBuilder();
@@ -19,7 +19,7 @@ public class Wordle_Main {
 
         System.out.println(Colors.BLUE + "Lettura wordle.conf..." + Colors.RESET);
         set_config(server_port, host_name, group_ip, configuration_done);
-
+        //TODO: add force shutdown from server
         System.out.println(Colors.BLUE + "Connessione al server di gioco..." + Colors.RESET);
         try (SocketChannel client_connected = SocketChannel.open(new InetSocketAddress(host_name.toString(), server_port.get()))) {
             System.out.println(Colors.erase + Colors.GREEN.get_color_code() +

@@ -19,7 +19,7 @@ public class Command_Controller {
     public String next_command() {
         try{
             command_read.delete(0, command_read.length());
-            String conn_status = game_status.get_current_user().equals("No_User") ? "Not connected" : "Connected: "+game_status.get_current_user();
+            String conn_status = game_status.get_current_user().equals(Colors.RED+"No_User"+Colors.RESET) ? "Not connected" : "Connected: "+game_status.get_current_user();
             System.out.print(Colors.BLUE+conn_status+" - "+game_status.get_current_stage().name()+">"+Colors.RESET);
             command_read.append(input_reader.readLine());
             return this.evaluate_command();
