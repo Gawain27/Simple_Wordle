@@ -20,7 +20,7 @@ public class Directive_Executor {
             case "register": register_account(command_args); break;
             case "play": play_game(command_args); break;
             case"login": login_account(command_args); break;
-            case "logout": logout_account(); break;
+            case "logout": logout_account(command_args); break;
             case "stats": stats_account(command_args); break;
             case "back": back_ops(); break;
             case "guess": guess_word(command_args); break;
@@ -67,19 +67,29 @@ public class Directive_Executor {
         }else if(response.contains("login_success")){
             System.out.println(Colors.erase +Colors.GREEN.get_color_code()+"Benvenuto "+command_args[1]+"!"+Colors.RESET.get_color_code());
             game_status.set_current_user(command_args[1]);
+        }else if(response.contains("already_occupied")){
+            System.out.println(Colors.erase +Colors.YELLOW.get_color_code()+"Questo utente è già collegato al server di gioco!"+Colors.RESET.get_color_code());
         }
     }
 
-    private void logout_account(){
+    private void logout_account(String[] command_args){
         if(!game_status.get_current_user().equals(Colors.RED.get_color_code()+"No_User"+Colors.RESET.get_color_code())){
             if(game_status.get_current_stage().name().equals("IN_GIOCO")){
                 if(!get_confirmation("Effettuando il log-out perderai la partita! Digita 'logout' per confermare", "logout")){
                     return;
                 }
             }
-            System.out.println(Colors.erase +Colors.GREEN.get_color_code()+"Logout avvenuto con successo!"+Colors.RESET.get_color_code());
-            game_status.set_current_user(Colors.RED.get_color_code()+"No_User"+Colors.RESET.get_color_code());
-            game_status.set_current_stage(GS_Controller.Game_States.MENU);
+            String response = connection_handler.contact_server(command_args, game_status.get_current_user());
+            if(response.contains("logout_success")){
+                if(game_status.get_current_stage().name().equals("IN_GIOCO")){
+                    connection_handler.contact_server(new String[]{"play_disconnect"}, game_status.get_current_user());
+                }
+                System.out.println(Colors.erase +Colors.GREEN.get_color_code()+"Logout avvenuto con successo!"+Colors.RESET.get_color_code());
+                game_status.set_current_user(Colors.RED.get_color_code()+"No_User"+Colors.RESET.get_color_code());
+                game_status.set_current_stage(GS_Controller.Game_States.MENU);
+            }else{
+                System.out.println(Colors.erase +Colors.GREEN.get_color_code()+"Impossibile effettuare il logout!"+Colors.RESET.get_color_code());
+            }
         }else{
             System.out.println(Colors.erase +Colors.YELLOW.get_color_code()+"Non puoi effettuare il logout se non sei connesso!"+Colors.RESET.get_color_code());
         }
@@ -105,6 +115,9 @@ public class Directive_Executor {
                 confirmation = get_confirmation("Tornare al menu senza condividere il risultato?\nDigita 'back' di nuovo per confermare:", "back");
         }
         if(confirmation){
+            if(game_status.get_current_stage().name().equals("IN_GIOCO")){
+                connection_handler.contact_server(new String[]{"play_disconnect"}, game_status.get_current_user());
+            }
             System.out.println(Colors.erase + Colors.GREEN.get_color_code() +
                     "Wordle 3.0!\nDigita 'help' per avere una lista di comandi!"+Colors.RESET.get_color_code());
             game_status.set_current_stage(GS_Controller.Game_States.MENU);
@@ -159,6 +172,8 @@ public class Directive_Executor {
         if(confirmation){
             if(!game_status.get_current_stage().name().equals("IN_GIOCO")){
                connection_handler.contact_server(new String[]{"disconnect"}, game_status.get_current_user());
+            }else{
+                connection_handler.contact_server(new String[]{"play_disconnect"}, game_status.get_current_user());
             }
             System.out.println(Colors.erase + Colors.GREEN.get_color_code() + "Grazie per aver giocato a Wordle 3.0!"+Colors.RESET.get_color_code());
             game_status.set_stop_client(true);
@@ -179,9 +194,6 @@ public class Directive_Executor {
             if(!reader.readLine().equals(to_confirm)){
                 System.out.println(Colors.RED.get_color_code()+"\nOperazione annullata!"+Colors.RESET.get_color_code());
                 return false;
-            }
-            if(game_status.get_current_stage().name().equals("IN_GIOCO")){
-               connection_handler.contact_server(new String[]{"play_disconnect"}, game_status.get_current_user());
             }
             return true;
         } catch (IOException e) {
