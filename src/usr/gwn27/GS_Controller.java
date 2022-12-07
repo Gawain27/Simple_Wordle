@@ -82,8 +82,7 @@ public class GS_Controller {
     }
 
     public String get_shared_game(Integer game_index){
-        //TODO: REMEMBER to add game number from server
-        if(this.shared_games.size() < game_index || game_index <= 0){
+        if(this.shared_games.size() < game_index || game_index < 0){
             return null;
         }else{
             return this.shared_games.get(game_index-1);
@@ -96,5 +95,40 @@ public class GS_Controller {
 
     public void increase_shared_number(){
         this.shared_number.incrementAndGet();
+    }
+
+    public String fixed_hints(){
+        StringBuilder fixed = new StringBuilder();
+        for(int i = 0; i < word_hints.length(); i++){
+            if((word_hints.charAt(i)+"").matches("[a-zA-Z]+")){
+                if((word_hints.charAt(i)+"").contains("m")){
+                    if((word_hints.charAt(i-1)+"").matches("[0-9]")){
+                        fixed.append(word_hints.charAt(i));
+                        continue;
+                    }
+                }
+                fixed.append('?');
+            }else{fixed.append(word_hints.charAt(i));}
+        }
+        return fixed.toString();
+    }
+
+    public void handle_guess_result(String guess_response, String appendable, boolean end, String ...message){
+        increase_guess_number();
+        String next_hint = guess_response.split(" ")[1];
+        append_word_hints(next_hint+appendable);
+        System.out.println(Colors.erase+get_word_hints());
+        if(end){
+            set_current_stage(GS_Controller.Game_States.RISULTATO);
+            System.out.println("\n\n"+Colors.GREEN.get_color_code()+message[0]+Colors.RESET.get_color_code());
+        }
+    }
+
+    public String[] merged_request(String[] start, String ...to_append){
+        StringBuilder base = new StringBuilder(String.join(" ", start));
+        for(String el : to_append){
+            base.append(" ").append(el);
+        }
+        return base.toString().split(" ");
     }
 }

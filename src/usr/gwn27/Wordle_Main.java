@@ -1,9 +1,6 @@
 package usr.gwn27;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
@@ -11,36 +8,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Wordle_Main {
     public static void main(String[] args) {
-        GS_Controller status_controller = new GS_Controller(GS_Controller.Game_States.MENU, Colors.RED+"No_User"+Colors.RESET);
+        GS_Controller status_controller = new GS_Controller(GS_Controller.Game_States.MENU, Colors.RED.get_color_code()+"No_User"+Colors.RESET.get_color_code());
         Boolean configuration_done = false;
         AtomicInteger server_port = new AtomicInteger();
         StringBuilder host_name = new StringBuilder();
         StringBuilder group_ip = new StringBuilder();
 
-        System.out.println(Colors.BLUE + "Lettura wordle.conf..." + Colors.RESET);
+        System.out.println(Colors.BLUE.get_color_code() + "Lettura wordle.conf..." + Colors.RESET.get_color_code());
         set_config(server_port, host_name, group_ip, configuration_done);
-        //TODO: add force shutdown from server
-        System.out.println(Colors.BLUE + "Connessione al server di gioco..." + Colors.RESET);
+
+        System.out.println(Colors.BLUE.get_color_code() + "Connessione al server di gioco..." + Colors.RESET.get_color_code());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try (SocketChannel client_connected = SocketChannel.open(new InetSocketAddress(host_name.toString(), server_port.get()))) {
+            new Feed_Controller(server_port.get(), InetAddress.getByName(group_ip.toString()), status_controller).start();
             System.out.println(Colors.erase + Colors.GREEN.get_color_code() +
                     "\nWordle 3.0!\nDigita 'help' per avere una lista di comandi!" + Colors.RESET.get_color_code());
-            Command_Controller command_handler = new Command_Controller(status_controller);
+            Command_Controller command_handler = new Command_Controller(status_controller, reader);
             Client_Connection_Handler connection_handler = new Client_Connection_Handler(client_connected);
-            Directive_Executor d_executor = new Directive_Executor(connection_handler, status_controller);
-            new Thread(new Feed_Controller(server_port.get(), InetAddress.getByName(group_ip.toString()), status_controller)).start();
+            Directive_Executor d_executor = new Directive_Executor(connection_handler, status_controller, reader);
 
             do {
-
                 String next_command = command_handler.next_command();
                 if (next_command == null) {
                     continue;
                 }
                 d_executor.evaluate_command(next_command);
-
             } while (!status_controller.get_stop_client());
-            d_executor.evaluate_command("safe_shutdown");
+            System.exit(0);
         } catch (IOException e) {
-            System.out.println(Colors.RED+"Impossibile connettersi al server - Chiusura applicazione..."+Colors.RESET);
+            System.out.println(Colors.RED.get_color_code()+"Impossibile connettersi al server - Chiusura applicazione..."+Colors.RESET.get_color_code());
             System.exit(0);
         }
     }
@@ -73,19 +69,19 @@ public class Wordle_Main {
                 throw new IOException();
             }
         } catch (FileNotFoundException e) {
-            System.out.println(Colors.RED+"Impossibile trovare wordle.conf - Chiusura applicazione..."+Colors.RESET);
+            System.out.println(Colors.RED.get_color_code()+"Impossibile trovare wordle.conf - Chiusura applicazione..."+Colors.RESET.get_color_code());
             System.exit(0);
         } catch (UnsupportedOperationException e){
-            System.out.println(Colors.RED+"Errore parametro 'group_ip' - Chiusura applicazione..."+Colors.RESET);
+            System.out.println(Colors.RED.get_color_code()+"Errore parametro 'group_ip' - Chiusura applicazione..."+Colors.RESET.get_color_code());
             System.exit(0);
         } catch (NumberFormatException e) {
-            System.out.println(Colors.RED+"Errore parametro 'server_port' - Chiusura applicazione..."+Colors.RESET);
+            System.out.println(Colors.RED.get_color_code()+"Errore parametro 'server_port' - Chiusura applicazione..."+Colors.RESET.get_color_code());
             System.exit(0);
         } catch (IllegalArgumentException e) {
-            System.out.println(Colors.RED+"Parametri wordle.conf errati - Chiusura applicazione..."+Colors.RESET);
+            System.out.println(Colors.RED.get_color_code()+"Parametri wordle.conf errati - Chiusura applicazione..."+Colors.RESET.get_color_code());
             System.exit(0);
         } catch (IOException e) {
-            System.out.println(Colors.RED+"Impossibile configurare il gioco - Chiusura applicazione..."+Colors.RESET);
+            System.out.println(Colors.RED.get_color_code()+"Impossibile configurare il gioco - Chiusura applicazione..."+Colors.RESET.get_color_code());
             System.exit(0);
         }
     }
